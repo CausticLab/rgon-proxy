@@ -1,0 +1,39 @@
+version: '2'
+
+services:
+  nginx:
+    image: "nginx"
+    tty: true
+    stdin_open: true
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ${DIR}/htpasswd:/etc/nginx/htpasswd
+      - ${DIR}/conf.d:/etc/nginx/conf.d
+      - ${DIR}//vhost.d:/etc/nginx/vhost.d
+      #- ${DIR}/html:/usr/share/nginx/html
+      #- ${DIR}/rancher-gen:/etc/nginx/rancher-gen
+      - ${DIR}/certs:/etc/nginx/certs:ro
+    labels:
+      io.rancher.sidekicks: rancher-gen
+      io.rancher.scheduler.global: 'false'  # true for multi-host
+      rgon-proxy: nginx
+  rancher-gen:
+    image: "causticlab/rgon-proxy:dev"  # :latest for production
+    tty: true
+    stdin_open: true
+    links:
+      - nginx
+    volumes_from:
+      - nginx
+    volumes:
+      - ${DIR}/rancher-gen:/etc/rgon-proxy/rancher-gen
+    links:
+      - nginx
+    labels:
+      io.rancher.scheduler.global: 'true'
+      io.rancher.container.create_agent: 'true'
+      io.rancher.container.agent.role: 'environment'
+      rgon-proxy: rancher-gen
+    command: "-config /etc/rgon-proxy/rancher-gen/rancher-gen.cfg"

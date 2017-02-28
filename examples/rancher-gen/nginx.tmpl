@@ -1,0 +1,51 @@
+{{$local := host}}
+#This Host:
+#  UUID: {{$local.UUID}}
+#  Name: {{$local.Name}}
+#  Address: {{$local.Address}}
+#  Hostname: {{$local.Hostname}}
+#  Labels: {{$local.Labels}}
+
+# Access Log Formatting
+log_format vhost '$host $remote_addr - $remote_user [$time_local] '
+                 '"$request" $status $body_bytes_sent '
+                 '"$http_referer" "$http_user_agent"';
+
+## HOSTS ----------------
+{{range $labelValue, $hosts := hosts | groupByLabel "grg.url" -}}
+  {{range $host := $hosts}}
+upstream {{$labelValue}}{
+  server {{$host.Address}}:{{$host.Labels.GetValue "grg.port" "8080"}};
+}
+server{
+  server_name {{$labelValue}};
+  listen 80;
+  access_log /var/log/nginx/access.log vhost;
+  location / {
+    proxy_pass http://{{$labelValue}};
+  }
+}
+  {{end}}
+{{end}}
+
+## SERVICES --------------
+{{range $labelValue, $services := services | groupByLabel "grg.url" -}}
+upstream {{$labelValue}} {
+  {{range $serv := $services}}{{range $cnt := .Containers -}}
+    {{$portLen := len $serv.Ports -}}
+
+    {{if eq $portLen 1}}{{range $port := $serv.Ports}}
+      server {{$cnt.Address}}:{{$port.InternalPort}};
+    {{- end}}{{- end}}
+
+  {{- end}}{{- end}}
+}
+server{
+  server_name {{$labelValue}};
+  listen 80;
+  access_log /var/log/nginx/access.log vhost;
+  location / {
+    proxy_pass http://{{$labelValue}};
+  }
+}
+{{end}}
