@@ -17,7 +17,5 @@ RUN tar -zxvf /tmp/*.tar.gz -C /usr/local/bin \
   && chmod +x /usr/local/bin/acmetool
 
 ADD ./examples/rancher-gen/rancher-gen.cfg ./examples/rancher-gen/nginx.tmpl /etc/rancher-gen/
-ADD ./examples/rancher-gen/nginx.tmpl
-
 
 ENTRYPOINT ["/usr/local/bin/rancher-gen"]
