@@ -22,7 +22,7 @@ RUN chmod +x /usr/local/bin/rancher-gen \
     && chmod +x /usr/local/bin/acmetool \
     && chown root:root /usr/local/bin/*
 
-ADD ./examples/rancher-gen/rancher-gen.cfg ./examples/rancher-gen/nginx.tmpl /etc/rancher-gen/default
+ADD ./examples/rancher-gen/rancher-gen.cfg ./examples/rancher-gen/nginx.tmpl /etc/rancher-gen/default/
 
 ENTRYPOINT ["/usr/local/bin/rancher-gen"]
-CMD ["--config" "/etc/rancher-gen/rancher-gen.cfg"]
+CMD ["--config" "/etc/rancher-gen/default/rancher-gen.cfg"]
