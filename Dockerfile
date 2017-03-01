@@ -16,7 +16,7 @@ RUN ls /tmp/*.tar.gz | xargs -i tar zxf {} -C /usr/local/bin
 RUN mv /usr/local/bin/acmetool-${ACMETOOL_RELEASE}-linux_amd64 /usr/local/bin/acmetool \
  && mv /usr/local/bin/rancher-gen-linux-amd64 /usr/local/bin/rancher-gen \
  && mv /usr/local/bin/rgon-exec-linux-amd64 /usr/local/bin/rgon-exec
-
+docker
 RUN chmod +x /usr/local/bin/rancher-gen \
     && chmod +x /usr/local/bin/rgon-exec \
     && chmod +x /usr/local/bin/acmetool \
@@ -24,4 +24,4 @@ RUN chmod +x /usr/local/bin/rancher-gen \
 
 ADD ./examples/rancher-gen/rancher-gen.cfg ./examples/rancher-gen/nginx.tmpl /etc/rancher-gen/default/
 
-ENTRYPOINT ["/usr/local/bin/rancher-gen", "--config", "/etc/rancher-gen/default/rancher-gen.cfg"]
+ENTRYPOINT ["/usr/local/bin/rancher-gen"]
