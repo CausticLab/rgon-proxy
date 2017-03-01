@@ -36,4 +36,4 @@ services:
       io.rancher.container.create_agent: 'true'
       io.rancher.container.agent.role: 'environment'
       rgon-proxy: rancher-gen
-    command: "-config /etc/rgon-proxy/rancher-gen.cfg"
+    command: "-config /etc/rancher-gen/rancher-gen.cfg"
