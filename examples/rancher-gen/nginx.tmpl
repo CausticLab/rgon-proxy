@@ -12,10 +12,10 @@ log_format vhost '$host $remote_addr - $remote_user [$time_local] '
                  '"$http_referer" "$http_user_agent"';
 
 ## HOSTS ----------------
-{{range $labelValue, $hosts := hosts | groupByLabel "grg.url" -}}
+{{range $labelValue, $hosts := hosts | groupByLabel "rgon.domain" -}}
   {{range $host := $hosts}}
 upstream {{$labelValue}}{
-  server {{$host.Address}}:{{$host.Labels.GetValue "grg.port" "8080"}};
+  server {{$host.Address}}:{{$host.Labels.GetValue "rgon.port" "8080"}};
 }
 server{
   server_name {{$labelValue}};
@@ -29,7 +29,7 @@ server{
 {{end}}
 
 ## SERVICES --------------
-{{range $labelValue, $services := services | groupByLabel "grg.url" -}}
+{{range $labelValue, $services := services | groupByLabel "rgon.domain" -}}
 upstream {{$labelValue}} {
   {{range $serv := $services}}{{range $cnt := .Containers -}}
     {{$portLen := len $serv.Ports -}}
