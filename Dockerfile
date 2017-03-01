@@ -13,10 +13,10 @@ ADD https://github.com/hlandau/acme/releases/download/${ACMETOOL_RELEASE}/acmeto
 
 RUN ls /tmp/*.tar.gz | xargs -i tar zxf {} -C /usr/local/bin
 
-RUN mv /usr/local/bin/acmetool-${ACMETOOL_RELEASE}-linux_amd64 /usr/local/bin/acmetool \
+RUN mv /usr/local/bin/acmetool-${ACMETOOL_RELEASE}-linux_amd64/bin/acmetool /usr/local/bin/acmetool \
  && mv /usr/local/bin/rancher-gen-linux-amd64 /usr/local/bin/rancher-gen \
  && mv /usr/local/bin/rgon-exec-linux-amd64 /usr/local/bin/rgon-exec
-docker
+
 RUN chmod +x /usr/local/bin/rancher-gen \
     && chmod +x /usr/local/bin/rgon-exec \
     && chmod +x /usr/local/bin/acmetool \

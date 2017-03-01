@@ -6,21 +6,24 @@ services:
     tty: true
     stdin_open: true
     ports:
-      - 80:80
-      - 443:443
+      - 80:80/tcp
+      - 443:443/tcp
     volumes:
-      - ${DIR}/htpasswd:/etc/nginx/htpasswd
-      - ${DIR}/conf.d:/etc/nginx/conf.d
-      - ${DIR}/vhost.d:/etc/nginx/vhost.d
-      #- ${DIR}/html:/usr/share/nginx/html
-      #- ${DIR}/rancher-gen:/etc/nginx/rancher-gen
-      - ${DIR}/certs:/etc/nginx/certs:ro
+      - rgonPasswd:/etc/nginx/htpasswd
+      - rgonConf:/etc/nginx/conf.d
+      - rgonVhost:/etc/nginx/vhost.d
+      - rgonCerts:/etc/nginx/certs:ro
     labels:
       io.rancher.sidekicks: rgon-proxy
       io.rancher.scheduler.global: 'false'  # true for multi-host
       rgon-proxy: nginx
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: 5
   rgon-proxy:
-    image: "causticlab/rgon-proxy:latest"  # :latest for production
+    image: "causticlab/rgon-proxy:dev"  # :latest for production
     tty: true
     stdin_open: true
     links:
@@ -28,7 +31,7 @@ services:
     volumes_from:
       - nginx
     volumes:
-      - ${DIR}/rancher-gen:/etc/rgon-proxy
+      - rgonRancherGen:/etc/rancher-gen
     links:
       - nginx
     labels:
@@ -36,4 +39,9 @@ services:
       io.rancher.container.create_agent: 'true'
       io.rancher.container.agent.role: 'environment'
       rgon-proxy: rancher-gen
-    command: "-config /etc/rancher-gen/rancher-gen.cfg"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: 5
+    command: "-config /etc/rancher-gen/default/rancher-gen.cfg"
