@@ -11,6 +11,19 @@ log_format vhost '$host $remote_addr - $remote_user [$time_local] '
                  '"$request" $status $body_bytes_sent '
                  '"$http_referer" "$http_user_agent"';
 
+## ACME CHALLENGE -------
+{{range $labelValue, $services := services | groupByLabel "rgon-acme" -}}
+upstream acmetool {
+  {{range $serv := $services}}{{range $cnt := .Containers -}}
+
+    {{range $port := $serv.Ports}}
+      server {{$cnt.Address}}:{{$port.InternalPort}};
+    {{- end}}
+
+  {{- end}}{{- end}}
+}
+{{end}}
+
 ## HOSTS ----------------
 {{range $labelValue, $hosts := hosts | groupByLabel "rgon.domain" -}}
   {{range $host := $hosts}}
@@ -44,6 +57,11 @@ server{
   server_name {{$labelValue}};
   listen 80;
   access_log /var/log/nginx/access.log vhost;
+
+  location ^~ /.well-known/acme-challenge/ {
+    proxy_pass http://acmetool;
+  }
+
   location / {
     proxy_pass http://{{$labelValue}};
   }

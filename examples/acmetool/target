@@ -1,0 +1,9 @@
+request:
+  provider: https://acme-v01.api.letsencrypt.org/directory
+  key:
+    type: rsa
+  challenge:
+    http-ports:
+      - 402
+      - "0.0.0.0:402"
+      - "[::]:402"

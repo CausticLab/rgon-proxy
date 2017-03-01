@@ -6,7 +6,6 @@ ENV RANCHER_GEN_RELEASE=v0.2.1 \
     RGON_EXEC_RELEASE=v1.0.0 \
     ACMETOOL_RELEASE=v0.0.59
 
-
 ADD https://github.com/causticlab/go-rancher-gen/releases/download/${RANCHER_GEN_RELEASE}/rancher-gen-linux-amd64.tar.gz /tmp/rancher-gen.tar.gz
 ADD https://github.com/causticlab/rgon-exec/releases/download/${RGON_EXEC_RELEASE}/rgon-exec-linux-amd64.tar.gz /tmp/rgon-exec.tar.gz
 ADD https://github.com/hlandau/acme/releases/download/${ACMETOOL_RELEASE}/acmetool-${ACMETOOL_RELEASE}-linux_amd64.tar.gz /tmp/acmetool.tar.gz
@@ -20,8 +19,10 @@ RUN mv /usr/local/bin/acmetool-${ACMETOOL_RELEASE}-linux_amd64/bin/acmetool /usr
 RUN chmod +x /usr/local/bin/rancher-gen \
     && chmod +x /usr/local/bin/rgon-exec \
     && chmod +x /usr/local/bin/acmetool \
-    && chown root:root /usr/local/bin/*
+    && chown root:root /usr/local/bin/* \
+    && rm /tmp/*.tar.gz
 
 ADD ./examples/rancher-gen/rancher-gen.cfg ./examples/rancher-gen/nginx.tmpl /etc/rancher-gen/default/
+ADD ./examples/acmetool/responses ./examples/acmetool/target /var/lib/acme/conf/
 
 ENTRYPOINT ["/usr/local/bin/rancher-gen"]
