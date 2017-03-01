@@ -30,6 +30,8 @@ services:
       - nginx
     volumes_from:
       - nginx
+    ports:
+      - 402:402/tcp
     volumes:
       - rgonRancherGen:/etc/rancher-gen
     links:
@@ -39,6 +41,7 @@ services:
       io.rancher.container.create_agent: 'true'
       io.rancher.container.agent.role: 'environment'
       rgon-proxy: rancher-gen
+      rgon-acme: 'true'
     logging:
       driver: "json-file"
       options:
