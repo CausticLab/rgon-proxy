@@ -45,11 +45,30 @@ server{
 {{range $labelValue, $services := services | groupByLabel "rgon.domain" -}}
 upstream {{$labelValue}} {
   {{range $serv := $services}}{{range $cnt := .Containers -}}
-    {{$portLen := len $serv.Ports -}}
 
-    {{if eq $portLen 1}}{{range $port := $serv.Ports}}
+    {{ if .Labels.Exists "rgon.port" }}
+      server {{$cnt.Address}}:{{$cnt.Labels.GetValue "rgon.port"}};
+    {{else}}
+      {{$portLen := len $serv.Ports -}}
+
+      {{if eq $portLen 1}}
       server {{$cnt.Address}}:{{$port.InternalPort}};
-    {{- end}}{{- end}}
+      {{- end}}
+
+      {{if gt $portLen 1}}
+        {{$defaultPort := "80"}}
+        {{ $port := where $serv.Ports "InternalPort" $defaultPort }}
+        {{if $port}}
+          server {{$cnt.Address}}:80;
+        {{- else}}
+          server {{$cnt.Address}} down;
+        {{- end}}
+      {{- end}}
+
+      {{if eq $portLen 0}}
+      server {{$cnt.Address}} down;
+      {{- end}}
+    {{- end}}
 
   {{- end}}{{- end}}
 }
