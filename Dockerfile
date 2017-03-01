@@ -24,4 +24,4 @@ RUN chmod +x /usr/local/bin/rancher-gen \
 
 ADD ./examples/rancher-gen/rancher-gen.cfg ./examples/rancher-gen/nginx.tmpl /etc/rancher-gen/default/
 
-ENTRYPOINT ["/usr/local/bin/rancher-gen"]
+ENTRYPOINT ["/usr/local/bin/rancher-gen", "--config", "/etc/rancher-gen/default/rancher-gen.cfg"]
