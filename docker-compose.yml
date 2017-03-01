@@ -20,7 +20,7 @@ services:
       io.rancher.scheduler.global: 'false'  # true for multi-host
       rgon-proxy: nginx
   rgon-proxy:
-    image: "causticlab/rgon-proxy:latest"  # :latest for production
+    image: "causticlab/rgon-proxy:v0.0.3"  # :latest for production
     tty: true
     stdin_open: true
     links:
