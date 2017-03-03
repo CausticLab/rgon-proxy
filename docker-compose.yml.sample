@@ -9,10 +9,10 @@ services:
       - 80:80/tcp
       - 443:443/tcp
     volumes:
-      - rgonPasswd:/etc/nginx/htpasswd
-      - rgonConf:/etc/nginx/conf.d
-      - rgonVhost:/etc/nginx/vhost.d
-      - rgonCerts:/etc/nginx/certs:ro
+      - ${DIR}/htpasswd:/etc/nginx/htpasswd
+      - ${DIR}/conf:/etc/nginx/conf.d
+      - ${DIR/vhost:/etc/nginx/vhost.d
+      - ${DIR}/certs:/etc/nginx/certs
     labels:
       io.rancher.sidekicks: rgon-proxy
       io.rancher.scheduler.global: 'false'  # true for multi-host
@@ -33,7 +33,7 @@ services:
     ports:
       - 402:402/tcp
     volumes:
-      - rgonRancherGen:/etc/rancher-gen
+      - ${DIR}/rancher-gen:/etc/rancher-gen
     links:
       - nginx
     labels:
@@ -47,4 +47,6 @@ services:
       options:
         max-size: 10m
         max-file: 5
+    environment:
+      RGEN_CONFIG_ONETIME: '/etc/rancher-gen/default/rancher-gen-onetime.cfg'
     command: "-config /etc/rancher-gen/default/rancher-gen.cfg"
