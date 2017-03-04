@@ -19,12 +19,16 @@ RUN mv /usr/local/bin/acmetool-${ACMETOOL_RELEASE}-linux_amd64/bin/acmetool /usr
 ADD ./examples/rancher-gen/rancher-gen.cfg ./examples/rancher-gen/rancher-gen-onetime.cfg ./examples/rancher-gen/nginx.tmpl /etc/rancher-gen/default/
 ADD ./examples/acmetool/responses ./examples/acmetool/target /var/lib/acme/conf/
 ADD ./examples/acmetool/hooks/01triggerRancherGen.sh /usr/lib/acme/hooks/
+ADD ./app/entrypoint.sh /app/
 
 RUN chmod +x /usr/local/bin/rancher-gen \
     && chmod +x /usr/local/bin/rgon-exec \
     && chmod +x /usr/local/bin/acmetool \
     && chown root:root /usr/local/bin/* \
     && chmod +x /usr/lib/acme/hooks/* \
+    && chmod +x /app/* \
     && rm /tmp/*.tar.gz
 
-ENTRYPOINT ["/usr/local/bin/rancher-gen"]
+#ENTRYPOINT ["/usr/local/bin/rancher-gen"]
+ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh" ]
+CMD ["/bin/sh", "/usr/local/bin/rancher-gen" ]
