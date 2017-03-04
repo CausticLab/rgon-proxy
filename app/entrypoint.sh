@@ -15,10 +15,6 @@ fi
 
 function check_writable_directory {
     local dir="$1"
-    docker_api "/containers/$HOSTNAME/json" | jq ".Mounts[].Destination" | grep -q "^\"$dir\"$"
-    if [[ $? -ne 0 ]]; then
-        echo "Warning: '$dir' does not appear to be a mounted volume."
-    fi
     if [[ ! -d "$dir" ]]; then
         echo "Error: can't access to '$dir' directory !" >&2
         echo "Check that '$dir' directory is declared has a writable volume." >&2
@@ -34,16 +30,32 @@ function check_writable_directory {
 }
 
 function check_dh_group {
-  if [[ ! -f /etc/nginx/certs/dhparam.pem ]]; then
+  if [[ ! -f /etc/nginx/dhparam/dhparam.pem ]]; then
     echo "Creating Diffie-Hellman group (can take several minutes...)"
-    openssl dhparam -out /etc/nginx/certs/.dhparam.pem.tmp 2048
-    mv /etc/nginx/certs/.dhparam.pem.tmp /etc/nginx/certs/dhparam.pem || exit 1
+    openssl dhparam -out /etc/nginx/dhparam/.dhparam.pem.tmp 2048
+    mv /etc/nginx/dhparam/.dhparam.pem.tmp /etc/nginx/dhparam/dhparam.pem || exit 1
+  fi
+}
+
+function check_nginx_conf {
+  if [[ -f /etc/nginx/conf.d/nginx.conf ]]; then
+    rm -f /etc/nginx/conf.d/nginx.conf
+  fi
+}
+
+function rancher_gen_firstrun {
+  if [[ -f /etc/rancher-gen/default/rancher-gen-firstrun.cfg ]]; then
+    echo [ENTRYPOINT]: Running Rancher-Gen first-run 
+    /usr/local/bin/rancher-gen --config /etc/rancher-gen/default/rancher-gen-firstrun.cfg
+    echo [ENTRYPOINT]: Rancher-Gen first-run complete
   fi
 }
 
 check_writable_directory '/etc/nginx/certs'
 check_writable_directory '/etc/nginx/vhost.d'
-check_writable_directory '/usr/share/nginx/html'
+check_writable_directory '/etc/nginx/html'
 check_dh_group
+check_nginx_conf
+rancher_gen_firstrun
 
 exec "$@"
