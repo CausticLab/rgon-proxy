@@ -2,7 +2,7 @@ FROM alpine:3.5
 
 RUN apk add --no-cache ca-certificates openssl
 
-ENV RANCHER_GEN_RELEASE=v0.4.3 \
+ENV RANCHER_GEN_RELEASE=v0.5.0 \
     RGON_EXEC_RELEASE=v1.1.1 \
     ACMETOOL_RELEASE=v0.0.59
 
@@ -13,7 +13,7 @@ ADD https://github.com/hlandau/acme/releases/download/${ACMETOOL_RELEASE}/acmeto
 RUN ls /tmp/*.tar.gz | xargs -i tar zxf {} -C /usr/local/bin
 
 RUN mv /usr/local/bin/acmetool-${ACMETOOL_RELEASE}-linux_amd64/bin/acmetool /usr/local/bin/acmetool \
- && mv /usr/local/bin/rancher-gen-linux-amd64 /usr/local/bin/rancher-gen \
+# && mv /usr/local/bin/rancher-gen-linux-amd64 /usr/local/bin/rancher-gen \
  && mv /usr/local/bin/rgon-exec-linux-amd64 /usr/local/bin/rgon-exec
 
 #ADD ./examples/rancher-gen/rancher-gen.cfg ./examples/rancher-gen/rancher-gen-firstrun.cfg ./examples/rancher-gen/nginx.tmpl /etc/rancher-gen/default/
@@ -30,4 +30,5 @@ RUN chmod +x /usr/local/bin/rancher-gen \
     && rm /tmp/*.tar.gz
 
 ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh" ]
-CMD /usr/local/bin/rancher-gen --config /etc/rancher-gen/default/rancher-gen.cfg
+#CMD /usr/local/bin/rancher-gen --config /etc/rancher-gen/default/rancher-gen.cfg
+CMD ["rancher-gen", "--config", "/etc/rancher-gen/default/rancher-gen.cfg"]

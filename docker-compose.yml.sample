@@ -49,4 +49,3 @@ services:
         max-file: 5
     environment:
       RGEN_CONFIG_ONETIME: '/etc/rancher-gen/default/rancher-gen-onetime.cfg'
-    command: "-config /etc/rancher-gen/default/rancher-gen.cfg"
