@@ -1,3 +1,5 @@
+#!/bin/sh
+
 if [[ -z "$CATTLE_URL" ]]; then
     echo "Error: can't get my CATTLE_URL !" >&2
     exit 1
@@ -45,9 +47,9 @@ function check_nginx_conf {
 
 function rancher_gen_firstrun {
   if [[ -f /etc/rancher-gen/default/rancher-gen-firstrun.cfg ]]; then
-    echo [ENTRYPOINT]: Running Rancher-Gen first-run 
+    echo "[ENTRYPOINT]: Running Rancher-Gen first-run"
     /usr/local/bin/rancher-gen --config /etc/rancher-gen/default/rancher-gen-firstrun.cfg
-    echo [ENTRYPOINT]: Rancher-Gen first-run complete
+    echo "[ENTRYPOINT]: Rancher-Gen first-run complete"
   fi
 }
 
