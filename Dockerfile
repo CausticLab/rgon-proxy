@@ -3,7 +3,7 @@ FROM alpine:3.5
 RUN apk add --no-cache ca-certificates openssl
 
 ENV RANCHER_GEN_RELEASE=v0.4.3 \
-    RGON_EXEC_RELEASE=v1.0.0 \
+    RGON_EXEC_RELEASE=v1.1.1 \
     ACMETOOL_RELEASE=v0.0.59
 
 ADD https://github.com/causticlab/go-rancher-gen/releases/download/${RANCHER_GEN_RELEASE}/rancher-gen-linux-amd64.tar.gz /tmp/rancher-gen.tar.gz
@@ -27,7 +27,5 @@ RUN chmod +x /usr/local/bin/rancher-gen \
     && chmod +x /app/* \
     && rm /tmp/*.tar.gz
 
-#ENTRYPOINT ["/usr/local/bin/rancher-gen"]
 ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh" ]
-#CMD ["/bin/sh", "/usr/local/bin/rancher-gen" "--config" "/etc/rancher-gen/default/rancher-gen.cfg" ]
 CMD /usr/local/bin/rancher-gen --config /etc/rancher-gen/default/rancher-gen.cfg
