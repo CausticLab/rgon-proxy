@@ -55,7 +55,6 @@ function rancher_gen_firstrun {
 
 check_writable_directory '/etc/nginx/certs'
 check_writable_directory '/etc/nginx/vhost.d'
-check_writable_directory '/etc/nginx/html'
 check_dh_group
 check_nginx_conf
 rancher_gen_firstrun
