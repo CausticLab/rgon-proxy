@@ -18,7 +18,7 @@ RUN mv /usr/local/bin/acmetool-${ACMETOOL_RELEASE}-linux_amd64/bin/acmetool /usr
 
 #ADD ./examples/rancher-gen/rancher-gen.cfg ./examples/rancher-gen/rancher-gen-firstrun.cfg ./examples/rancher-gen/nginx.tmpl /etc/rancher-gen/default/
 #ADD ./examples/acmetool/responses ./examples/acmetool/target /var/lib/acme/conf/
-COPY examples/rancher-gen/ /etc/rancher-gen/default/
+COPY examples/rancher-gen/ /app/rancher-gen/default/
 COPY examples/acmetool/ /var/lib/acme/conf/
 COPY app/entrypoint.sh /app/
 
