@@ -16,7 +16,7 @@ if [[ -z "$CATTLE_SECRET_KEY" ]]; then
 fi
 
 function copy_config_files {
-    if [[ ! -d "$dir" ]]; then
+    if [[ ! -d /etc/rancher-gen/default ]]; then
         mkdir -p /etc/rancher-gen/default
         cp /app/rancher-gen/default/* /etc/rancher-gen/default/
     fi
