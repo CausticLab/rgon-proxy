@@ -32,10 +32,10 @@ function check_writable_directory {
 }
 
 function check_dh_group {
-  if [[ ! -f /etc/nginx/dhparam/dhparam.pem ]]; then
+  if [[ ! -f /etc/nginx/certs/dhparam.pem ]]; then
     echo "Creating Diffie-Hellman group (can take several minutes...)"
-    openssl dhparam -out /etc/nginx/dhparam/.dhparam.pem.tmp 2048
-    mv /etc/nginx/dhparam/.dhparam.pem.tmp /etc/nginx/dhparam/dhparam.pem || exit 1
+    openssl dhparam -out /etc/nginx/certs/.dhparam.pem.tmp 2048
+    mv /etc/nginx/certs/.dhparam.pem.tmp /etc/nginx/certs/dhparam.pem || exit 1
   fi
 }
 
