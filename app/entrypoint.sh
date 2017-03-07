@@ -15,6 +15,13 @@ if [[ -z "$CATTLE_SECRET_KEY" ]]; then
     exit 1
 fi
 
+function copy_config_files {
+    if [[ ! -d "$dir" ]]; then
+        mkdir -p /etc/rancher-gen/default
+        cp /app/rancher-gen/default/* /etc/rancher-gen/default/
+    fi
+}
+
 function check_writable_directory {
     local dir="$1"
     if [[ ! -d "$dir" ]]; then
@@ -53,6 +60,7 @@ function rancher_gen_firstrun {
   fi
 }
 
+copy_config_files
 check_writable_directory '/etc/nginx/certs'
 check_writable_directory '/etc/nginx/vhost.d'
 check_dh_group
