@@ -16,8 +16,10 @@ RUN mv /usr/local/bin/acmetool-${ACMETOOL_RELEASE}-linux_amd64/bin/acmetool /usr
  && mv /usr/local/bin/rancher-gen-linux-amd64 /usr/local/bin/rancher-gen \
  && mv /usr/local/bin/rgon-exec-linux-amd64 /usr/local/bin/rgon-exec
 
-ADD ./examples/rancher-gen/rancher-gen.cfg ./examples/rancher-gen/rancher-gen-firstrun.cfg ./examples/rancher-gen/nginx.tmpl /etc/rancher-gen/default/
-ADD ./examples/acmetool/responses ./examples/acmetool/target /var/lib/acme/conf/
+#ADD ./examples/rancher-gen/rancher-gen.cfg ./examples/rancher-gen/rancher-gen-firstrun.cfg ./examples/rancher-gen/nginx.tmpl /etc/rancher-gen/default/
+#ADD ./examples/acmetool/responses ./examples/acmetool/target /var/lib/acme/conf/
+ADD ./examples/rancher-gen/* /etc/rancher-gen/default/
+ADD ./examples/acmetool/* /var/lib/acme/conf/
 ADD ./app/entrypoint.sh /app/
 
 RUN chmod +x /usr/local/bin/rancher-gen \
