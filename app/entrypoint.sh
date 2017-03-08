@@ -15,6 +15,10 @@ if [[ -z "$CATTLE_SECRET_KEY" ]]; then
     exit 1
 fi
 
+function acmetool_init {
+  /usr/local/bin/acmetool quickstart
+}
+
 function copy_config_files {
     if [[ ! -d /etc/rancher-gen/default ]]; then
         mkdir -p /etc/rancher-gen/default
@@ -65,6 +69,7 @@ check_writable_directory '/etc/nginx/certs'
 check_writable_directory '/etc/nginx/vhost.d'
 check_dh_group
 check_nginx_conf
+acmetool_init
 rancher_gen_firstrun
 
 exec "$@"
