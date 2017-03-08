@@ -32,5 +32,4 @@ RUN chmod +x /usr/local/bin/rancher-gen \
     && rm /tmp/*.tar.gz
 
 ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh" ]
-#CMD /usr/local/bin/rancher-gen --config /etc/rancher-gen/default/rancher-gen.cfg
 CMD ["rancher-gen", "--config", "/etc/rancher-gen/default/rancher-gen.cfg"]

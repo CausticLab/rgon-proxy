@@ -16,7 +16,19 @@ if [[ -z "$CATTLE_SECRET_KEY" ]]; then
 fi
 
 function acmetool_init {
-  /usr/local/bin/acmetool quickstart
+    if [[ -z "$ACME_EMAIL" ]]; then
+        echo "Warning: can't get my ACME_EMAIL !" >&2
+    else
+        sed -i "s/hostmaster@example.com/$ACME_EMAIL/g" /var/lib/acme/conf/responses
+    fi
+
+    if [[ -z "$ACME_API" ]]; then
+        echo "Warning: can't get my ACME_API !" >&2
+    else
+        sed -i "s/https:\/\/acme-staging.api.letsencrypt.org\/directory/$ACME_API/g" /var/lib/acme/conf/responses
+    fi
+
+    /usr/local/bin/acmetool quickstart
 }
 
 function copy_config_files {
