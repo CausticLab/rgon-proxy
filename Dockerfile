@@ -13,11 +13,11 @@ ADD https://github.com/hlandau/acme/releases/download/${ACMETOOL_RELEASE}/acmeto
 RUN ls /tmp/*.tar.gz | xargs -i tar zxf {} -C /usr/local/bin
 
 RUN mv /usr/local/bin/acmetool-${ACMETOOL_RELEASE}-linux_amd64/bin/acmetool /usr/local/bin/acmetool \
-# && mv /usr/local/bin/rancher-gen-linux-amd64 /usr/local/bin/rancher-gen \
  && mv /usr/local/bin/rgon-exec-linux-amd64 /usr/local/bin/rgon-exec
 
 #ADD ./examples/rancher-gen/rancher-gen.cfg ./examples/rancher-gen/rancher-gen-firstrun.cfg ./examples/rancher-gen/nginx.tmpl /etc/rancher-gen/default/
 #ADD ./examples/acmetool/responses ./examples/acmetool/target /var/lib/acme/conf/
+ADD  app/acmetool/hooks/01copyCertsToNginx.sh  /usr/lib/acme/hooks/
 COPY examples/rancher-gen/ /app/rancher-gen/default/
 COPY examples/acmetool/ /var/lib/acme/conf/
 COPY app/entrypoint.sh /app/
@@ -27,6 +27,8 @@ RUN chmod +x /usr/local/bin/rancher-gen \
     && chmod +x /usr/local/bin/acmetool \
     && chown root:root /usr/local/bin/* \
     && chmod +x /app/* \
+    && chown root:root /usr/lib/acme/hooks/* \
+    && chmod 644 /usr/lib/acme/hooks/* \
     && rm /tmp/*.tar.gz
 
 ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh" ]

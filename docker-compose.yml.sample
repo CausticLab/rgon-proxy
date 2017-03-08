@@ -11,7 +11,7 @@ services:
     volumes:
       - ${DIR}/htpasswd:/etc/nginx/htpasswd
       - ${DIR}/conf:/etc/nginx/conf.d
-      - ${DIR/vhost:/etc/nginx/vhost.d
+      - ${DIR}/vhost:/etc/nginx/vhost.d
       - ${DIR}/certs:/etc/nginx/certs
     labels:
       io.rancher.sidekicks: rgon-proxy
