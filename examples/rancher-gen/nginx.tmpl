@@ -55,7 +55,7 @@ server {
 }
 
 ## ACME CHALLENGE -------
-{{range $labelValue, $services := services | groupByLabel "rgon-acme" -}}
+{{range $domain, $services := services | groupByLabel "rgon-acme" -}}
 upstream acmetool {
   {{range $serv := $services}}{{range $cnt := .Containers -}}
 
@@ -68,27 +68,31 @@ upstream acmetool {
 {{end}}
 
 ## HOSTS ----------------
-{{range $labelValue, $hosts := hosts | groupByLabel "rgon.domain" -}}
+{{range $domain, $hosts := hosts | groupByLabel "rgon.domain" -}}
   {{range $host := $hosts}}
-upstream {{$labelValue}}{
+upstream {{$domain}}{
   server {{$host.Address}}:{{$host.Labels.GetValue "rgon.port" "8080"}};
 }
 server{
-  server_name {{$labelValue}};
+  server_name {{$domain}};
   listen 80;
   access_log /var/log/nginx/access.log vhost;
   location / {
-    proxy_pass http://{{$labelValue}};
+    proxy_pass http://{{$domain}};
   }
 }
   {{end}}
 {{end}}
 
 ## SERVICES --------------
-{{range $labelValue, $services := services | groupByLabel "rgon.domain" -}}
+{{range $domain, $services := services | groupByLabel "rgon.domain" -}}
 {{/* Assume that domains are unique; {{ len $services }} should be 1 */}}
 {{range $serv := $services}}
-upstream {{$labelValue}} {
+
+{{ $redirect_target := or $serv.Labels.GetValue "rgon.redirect" "http" }}
+{{ $has_certs := ( and (exists (printf "/etc/nginx/certs/%s/fullchain" $domain)) (exists (printf "/etc/nginx/certs/%s/privkey" $domain)) ) }}
+
+upstream {{$domain}} {
   {{range $cnt := .Containers -}}
     {{- $defaultPort := "80"}}
     {{- $port := where $serv.Ports "InternalPort" $defaultPort }}
@@ -107,7 +111,7 @@ upstream {{$labelValue}} {
   {{- end}}
 }
 server{
-  server_name {{$labelValue}};
+  server_name {{$domain}};
   listen 80;
   access_log /var/log/nginx/access.log vhost;
 
@@ -115,20 +119,20 @@ server{
     proxy_pass http://acmetool;
   }
 
-{{- if eq ($serv.Labels.GetValue "rgon.redirect") "https" }}
-  return 301 https://{{$labelValue}}$request_uri;
+{{- if (and ($has_certs) (eq $redirect_target "https") }}
+  return 301 https://{{$domain}}$request_uri;
 {{ else }}
   location / {
-    proxy_pass http://{{$labelValue}};
+    proxy_pass http://{{$domain}};
   }
 {{ end -}}
 }
 
-{{- $https_method := "redirect" }}
 
-{{- if and (exists (printf "/etc/nginx/certs/%s/fullchain" $labelValue)) (exists (printf "/etc/nginx/certs/%s/privkey" $labelValue)) }}
+
+{{- if $has_certs }}
 server {
-  server_name {{ $labelValue }};
+  server_name {{ $domain }};
   listen 443 ssl http2 ;
   access_log /var/log/nginx/access.log vhost;
 
@@ -140,31 +144,31 @@ server {
   ssl_session_cache shared:SSL:50m;
   ssl_session_tickets off;
 
-  ssl_certificate /etc/nginx/certs/{{ $labelValue }}/fullchain;
-  ssl_certificate_key /etc/nginx/certs/{{ $labelValue }}/privkey;
+  ssl_certificate /etc/nginx/certs/{{ $domain }}/fullchain;
+  ssl_certificate_key /etc/nginx/certs/{{ $domain }}/privkey;
 
   {{- if (exists "/etc/nginx/certs/dhparam.pem") }}
   ssl_dhparam /etc/nginx/certs/dhparam.pem;
   {{ end -}}
 
-  {{- if (ne $https_method "noredirect") }}
+  {{- if eq $redirect_target "https") }}
   add_header Strict-Transport-Security "max-age=31536000";
   {{ end -}}
 
-  {{- if (exists (printf "/etc/nginx/vhost.d/%s" $labelValue)) }}
-  include {{ printf "/etc/nginx/vhost.d/%s" $labelValue }};
+  {{- if (exists (printf "/etc/nginx/vhost.d/%s" $domain)) }}
+  include {{ printf "/etc/nginx/vhost.d/%s" $domain }};
   {{ else if (exists "/etc/nginx/vhost.d/default") }}
   include /etc/nginx/vhost.d/default;
   {{ end -}}
 
   location / {
-    proxy_pass http://{{$labelValue}};
-    {{ if (exists (printf "/etc/nginx/htpasswd/%s" $labelValue)) }}
-    auth_basic  "Restricted {{ $labelValue }}";
-    auth_basic_user_file  {{ (printf "/etc/nginx/htpasswd/%s" $labelValue) }};
+    proxy_pass http://{{$domain}};
+    {{ if (exists (printf "/etc/nginx/htpasswd/%s" $domain)) }}
+    auth_basic  "Restricted {{ $domain }}";
+    auth_basic_user_file  {{ (printf "/etc/nginx/htpasswd/%s" $domain) }};
     {{ end -}}
-                {{- if (exists (printf "/etc/nginx/vhost.d/%s_location" $labelValue)) }}
-                include {{ printf "/etc/nginx/vhost.d/%s_location" $labelValue}};
+                {{- if (exists (printf "/etc/nginx/vhost.d/%s_location" $domain)) }}
+                include {{ printf "/etc/nginx/vhost.d/%s_location" $domain}};
                 {{- else if (exists "/etc/nginx/vhost.d/default_location") }}
                 include /etc/nginx/vhost.d/default_location;
                 {{ end }}
