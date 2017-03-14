@@ -54,6 +54,23 @@ server {
   return 503;
 }
 
+{{ if (and (exists "/etc/nginx/certs/default.crt") (exists "/etc/nginx/certs/default.key")) }}
+server {
+  server_name _; # This is just an invalid value which will never trigger on a real hostname.
+  listen 443 ssl http2;
+  access_log /var/log/nginx/access.log vhost;
+  return 503;
+
+  {{- if (exists "/etc/nginx/certs/dhparam.pem") }}
+  ssl_dhparam /etc/nginx/certs/dhparam.pem;
+  {{ end -}}
+
+  ssl_session_tickets off;
+  ssl_certificate /etc/nginx/certs/default.crt;
+  ssl_certificate_key /etc/nginx/certs/default.key;
+}
+{{ end }}
+
 ## ACME CHALLENGE -------
 {{range $domain, $services := services | groupByLabel "rgon-acme" -}}
 upstream acmetool {
@@ -81,15 +98,15 @@ server{
     proxy_pass http://{{$domain}};
   }
 }
-  {{end}}
-{{end}}
+  {{end -}}
+{{end -}}
+
 
 ## SERVICES --------------
 {{range $domain, $services := services | groupByLabel "rgon.domain" -}}
-{{/* Assume that domains are unique; {{ len $services }} should be 1 */}}
 {{range $serv := $services}}
 
-{{ $redirect_target := or $serv.Labels.GetValue "rgon.redirect" "http" }}
+{{ $redirect_target := ($serv.Labels.GetValue "rgon.redirect" "http") }}
 {{ $has_certs := ( and (exists (printf "/etc/nginx/certs/%s/fullchain" $domain)) (exists (printf "/etc/nginx/certs/%s/privkey" $domain)) ) }}
 
 upstream {{$domain}} {
@@ -97,14 +114,18 @@ upstream {{$domain}} {
     {{- $defaultPort := "80"}}
     {{- $port := where $serv.Ports "InternalPort" $defaultPort }}
     {{- if .Labels.Exists "rgon.port" }}
+      # Has rgon.port label
       server {{$cnt.Address}}:{{$cnt.Labels.GetValue "rgon.port"}};
     {{- else }}
+      # No rgon.port label
       {{- $portLen := len $serv.Ports -}}
-      {{- if eq $portLen 0}}
+      {{- if eq $portLen 0 }}
+      # No ports available
       server {{$cnt.Address}} down;
       {{ else }}
-        {{- range $p := $port }}
-          server {{$cnt.Address}}:{{ $p.InternalPort }};
+      # Ports available
+        {{- range $p := $serv.Ports }}
+        server {{$cnt.Address}}:{{ $p.InternalPort }};
         {{ end -}}
       {{ end -}}
     {{ end -}}
@@ -119,7 +140,7 @@ server{
     proxy_pass http://acmetool;
   }
 
-{{- if (and ($has_certs) (eq $redirect_target "https") }}
+{{- if (and ($has_certs) (eq $redirect_target "https")) }}
   return 301 https://{{$domain}}$request_uri;
 {{ else }}
   location / {
@@ -127,8 +148,6 @@ server{
   }
 {{ end -}}
 }
-
-
 
 {{- if $has_certs }}
 server {
@@ -151,7 +170,7 @@ server {
   ssl_dhparam /etc/nginx/certs/dhparam.pem;
   {{ end -}}
 
-  {{- if eq $redirect_target "https") }}
+  {{- if (eq $redirect_target "https") }}
   add_header Strict-Transport-Security "max-age=31536000";
   {{ end -}}
 
@@ -164,14 +183,14 @@ server {
   location / {
     proxy_pass http://{{$domain}};
     {{ if (exists (printf "/etc/nginx/htpasswd/%s" $domain)) }}
-    auth_basic  "Restricted {{ $domain }}";
-    auth_basic_user_file  {{ (printf "/etc/nginx/htpasswd/%s" $domain) }};
+      auth_basic  "Restricted {{ $domain }}";
+      auth_basic_user_file  {{ (printf "/etc/nginx/htpasswd/%s" $domain) }};
     {{ end -}}
-                {{- if (exists (printf "/etc/nginx/vhost.d/%s_location" $domain)) }}
-                include {{ printf "/etc/nginx/vhost.d/%s_location" $domain}};
-                {{- else if (exists "/etc/nginx/vhost.d/default_location") }}
-                include /etc/nginx/vhost.d/default_location;
-                {{ end }}
+    {{- if (exists (printf "/etc/nginx/vhost.d/%s_location" $domain)) }}
+      include {{ printf "/etc/nginx/vhost.d/%s_location" $domain}};
+    {{- else if (exists "/etc/nginx/vhost.d/default_location") }}
+      include /etc/nginx/vhost.d/default_location;
+    {{ end }}
   }
 }
 {{ end }}{{/* ssl block */}}
