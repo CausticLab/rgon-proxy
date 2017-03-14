@@ -19,13 +19,13 @@ function acmetool_init {
     if [[ -z "$ACME_EMAIL" ]]; then
         echo "Warning: can't get my ACME_EMAIL !" >&2
     else
-        sed -i "s/hostmaster@example.com/$ACME_EMAIL/g" /var/lib/acme/conf/responses
+        sed -i "s~hostmaster@example.com~$ACME_EMAIL~g" /var/lib/acme/conf/responses
     fi
 
     if [[ -z "$ACME_API" ]]; then
         echo "Warning: can't get my ACME_API !" >&2
     else
-        sed -i "s/https:\/\/acme-staging.api.letsencrypt.org\/directory/$ACME_API/g" /var/lib/acme/conf/responses
+        sed -i "s~https://acme-staging.api.letsencrypt.org/directory~$ACME_API~g" /var/lib/acme/conf/responses
     fi
 
     /usr/local/bin/acmetool quickstart
@@ -63,6 +63,17 @@ function check_dh_group {
 }
 
 function check_nginx_conf {
+  if [[ ! -f /etc/nginx/certs/default/default.csr ]]; then
+    openssl genrsa -des3 -passout pass:x -out /etc/nginx/certs/default/default.pass.key 2048
+    openssl rsa -passin pass:x -in /etc/nginx/certs/default/default.pass.key \
+      -out /etc/nginx/certs/default/default.key
+    rm /etc/nginx/certs/default/default.pass.key
+    openssl req -new -key /etc/nginx/certs/default/default.key -out /etc/nginx/certs/default/default.csr \
+      -days 1000 -subj "/C=GB/ST=London/L=London/O=Global Security/OU=IT Department/CN=example.com"
+    openssl x509 -req -days 365 -in /etc/nginx/certs/default/default.csr \
+      -signkey /etc/nginx/certs/default/default.key -out /etc/nginx/certs/default/default.crt
+  fi
+
   if [[ -f /etc/nginx/conf.d/nginx.conf ]]; then
     rm -f /etc/nginx/conf.d/nginx.conf
   fi

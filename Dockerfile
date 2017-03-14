@@ -28,7 +28,7 @@ RUN chmod +x /usr/local/bin/rancher-gen \
     && chown root:root /usr/local/bin/* \
     && chmod +x /app/* \
     && chown root:root /usr/lib/acme/hooks/* \
-    && chmod 644 /usr/lib/acme/hooks/* \
+    && chmod +x /usr/lib/acme/hooks/* \
     && rm /tmp/*.tar.gz
 
 ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh" ]

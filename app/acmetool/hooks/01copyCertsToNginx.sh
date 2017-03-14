@@ -11,5 +11,6 @@ case "$1" in
     mkdir -p /etc/nginx/certs
     cp -RLf /var/lib/acme/live/* /etc/nginx/certs/
     ;;
+  *)
+    exit 42
 esac
-
