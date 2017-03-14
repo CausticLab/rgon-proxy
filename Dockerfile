@@ -2,7 +2,7 @@ FROM alpine:3.5
 
 RUN apk add --no-cache ca-certificates openssl
 
-ENV RANCHER_GEN_RELEASE=v0.5.0 \
+ENV RANCHER_GEN_RELEASE=v0.6.0 \
     RGON_EXEC_RELEASE=v1.1.1 \
     ACMETOOL_RELEASE=v0.0.59
 
