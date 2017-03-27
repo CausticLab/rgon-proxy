@@ -164,8 +164,8 @@ server {
   ssl_session_cache shared:SSL:50m;
   ssl_session_tickets off;
 
-  ssl_certificate /etc/nginx/certs/(index $domains 0)/fullchain;
-  ssl_certificate_key /etc/nginx/certs/(index $domains 0)/privkey;
+  ssl_certificate /etc/nginx/certs/{{index $domains 0}}/fullchain;
+  ssl_certificate_key /etc/nginx/certs/{{index $domains 0}}/privkey;
 
   {{- if (exists "/etc/nginx/certs/dhparam.pem") }}
   ssl_dhparam /etc/nginx/certs/dhparam.pem;
