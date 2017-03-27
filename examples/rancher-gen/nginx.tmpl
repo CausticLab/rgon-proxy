@@ -71,50 +71,6 @@ server {
 }
 {{ end }}
 
-## TEMPLATES -------
-{{ define "upstream" }}
-{{ $serv := . }}
-{{range $cnt := .Containers -}}
-  {{- $defaultPort := "80"}}
-  {{- $port := where $serv.Ports "InternalPort" $defaultPort }}
-  {{- if .Labels.Exists "rgon.port" }}
-    # Has rgon.port label
-    server {{$cnt.Address}}:{{$cnt.Labels.GetValue "rgon.port"}};
-  {{- else }}
-    # No rgon.port label
-    {{- $portLen := len $serv.Ports -}}
-    {{- if eq $portLen 0 }}
-    # No ports available
-    server {{$cnt.Address}} down;
-    {{ else }}
-    # Ports available
-      {{- range $p := $serv.Ports }}
-      server {{$cnt.Address}}:{{ $p.InternalPort }};
-      {{ end -}}
-    {{ end -}}
-  {{ end -}}
-{{- end}}
-{{ end }}
-
-{{ define "http-block" }}
-server_name {{$domain}};
-listen 80;
-access_log /var/log/nginx/access.log vhost;
-
-location ^~ /.well-known/acme-challenge/ {
-  proxy_pass http://acmetool;
-}
-
-{{- if (and ($has_certs) (eq $redirect_target "https")) }}
-return 301 https://{{$domain}}$request_uri;
-{{ else }}
-location / {
-  proxy_pass http://{{$domain}};
-}
-{{ end -}}
-{{ end }}
-
-
 ## ACME CHALLENGE -------
 {{range $domain, $services := services | groupByLabel "rgon-acme" -}}
 upstream acmetool {
@@ -132,10 +88,10 @@ upstream acmetool {
 {{range $domain, $hosts := hosts | groupByLabel "rgon.domain" -}}
   {{range $host := $hosts}}
 upstream {{$domain}}{
-  ## server {{$host.Address}}:{{$host.Labels.GetValue "rgon.port" "8080"}};
+  server {{$host.Address}}:{{$host.Labels.GetValue "rgon.port" "8080"}};
 }
 server{
-  server_name {{replace $domain "," " " -1}};
+  server_name {{$domain}};
   listen 80;
   access_log /var/log/nginx/access.log vhost;
   location / {
@@ -151,15 +107,47 @@ server{
 {{range $serv := $services}}
 
 {{ $redirect_target := ($serv.Labels.GetValue "rgon.redirect" "http") }}
-{{ $domains := split $domain "," }}
+{{ $domains := split $domain ","}}
 {{ $has_certs := ( and (exists (printf "/etc/nginx/certs/%s/fullchain" (index $domains 0))) (exists (printf "/etc/nginx/certs/%s/privkey" (index $domains 0))) ) }}
 
 upstream {{$domain}} {
-  {{ template "upstream" ($serv) }}
+  {{range $cnt := .Containers -}}
+    {{- $defaultPort := "80"}}
+    {{- $port := where $serv.Ports "InternalPort" $defaultPort }}
+    {{- if .Labels.Exists "rgon.port" }}
+      # Has rgon.port label
+      server {{$cnt.Address}}:{{$cnt.Labels.GetValue "rgon.port"}};
+    {{- else }}
+      # No rgon.port label
+      {{- $portLen := len $serv.Ports -}}
+      {{- if eq $portLen 0 }}
+      # No ports available
+      server {{$cnt.Address}} down;
+      {{ else }}
+      # Ports available
+        {{- range $p := $serv.Ports }}
+        server {{$cnt.Address}}:{{ $p.InternalPort }};
+        {{ end -}}
+      {{ end -}}
+    {{ end -}}
+  {{- end}}
 }
-
 server{
+  server_name {{replace $domain "," " " -1}};
+  listen 80;
+  access_log /var/log/nginx/access.log vhost;
 
+  location ^~ /.well-known/acme-challenge/ {
+    proxy_pass http://acmetool;
+  }
+
+{{- if (and ($has_certs) (eq $redirect_target "https")) }}
+  return 301 https://{{$domain}}$request_uri;
+{{ else }}
+  location / {
+    proxy_pass http://{{$domain}};
+  }
+{{ end -}}
 }
 
 {{- if $has_certs }}
@@ -176,8 +164,8 @@ server {
   ssl_session_cache shared:SSL:50m;
   ssl_session_tickets off;
 
-  ssl_certificate /etc/nginx/certs/{{index $domains 0}}/fullchain;
-  ssl_certificate_key /etc/nginx/certs/{{index $domains 0}}/privkey;
+  ssl_certificate /etc/nginx/certs/(index $domains 0)/fullchain;
+  ssl_certificate_key /etc/nginx/certs/(index $domains 0)/privkey;
 
   {{- if (exists "/etc/nginx/certs/dhparam.pem") }}
   ssl_dhparam /etc/nginx/certs/dhparam.pem;
