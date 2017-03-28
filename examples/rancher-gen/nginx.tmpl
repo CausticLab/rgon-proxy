@@ -71,46 +71,9 @@ server {
 }
 {{ end }}
 
-## ACME CHALLENGE -------
-{{range $domain, $services := services | groupByLabel "rgon-acme" -}}
-upstream acmetool {
-  {{range $serv := $services}}{{range $cnt := .Containers -}}
-
-    {{range $port := $serv.Ports}}
-      server {{$cnt.Address}}:{{$port.InternalPort}};
-    {{- end}}
-
-  {{- end}}{{- end}}
-}
-{{end}}
-
-## HOSTS ----------------
-{{range $domain, $hosts := hosts | groupByLabel "rgon.domain" -}}
-  {{range $host := $hosts}}
-upstream {{$domain}}{
-  server {{$host.Address}}:{{$host.Labels.GetValue "rgon.port" "8080"}};
-}
-server{
-  server_name {{$domain}};
-  listen 80;
-  access_log /var/log/nginx/access.log vhost;
-  location / {
-    proxy_pass http://{{$domain}};
-  }
-}
-  {{end -}}
-{{end -}}
-
-
-## SERVICES --------------
-{{range $domain, $services := services | groupByLabel "rgon.domain" -}}
-{{range $serv := $services}}
-
-{{ $redirect_target := ($serv.Labels.GetValue "rgon.redirect" "http") }}
-{{ $domains := split $domain ","}}
-{{ $has_certs := ( and (exists (printf "/etc/nginx/certs/%s/fullchain" (index $domains 0))) (exists (printf "/etc/nginx/certs/%s/privkey" (index $domains 0))) ) }}
-
-upstream {{$domain}} {
+## TEMPLATES -------
+{{- define "upstream"}}
+  {{- $serv := .}}
   {{range $cnt := .Containers -}}
     {{- $defaultPort := "80"}}
     {{- $port := where $serv.Ports "InternalPort" $defaultPort }}
@@ -123,7 +86,7 @@ upstream {{$domain}} {
       {{- if eq $portLen 0 }}
       # No ports available
       server {{$cnt.Address}} down;
-      {{ else }}
+      {{- else }}
       # Ports available
         {{- range $p := $serv.Ports }}
         server {{$cnt.Address}}:{{ $p.InternalPort }};
@@ -131,28 +94,55 @@ upstream {{$domain}} {
       {{ end -}}
     {{ end -}}
   {{- end}}
-}
-server{
-  server_name {{replace $domain "," " " -1}};
+{{- end}}
+
+{{- define "upstreamHost"}}
+  server {{.Address}}:{{.Labels.GetValue "rgon.port" "8080"}};
+{{- end}}
+
+{{- define "locationBlock"}}
+  {{- if (exists (printf "/etc/nginx/vhost.d/%s" .domain)) }}
+  include {{ printf "/etc/nginx/vhost.d/%s" .domain }};
+  {{- else if (exists "/etc/nginx/vhost.d/default") }}
+  include /etc/nginx/vhost.d/default;
+  {{ end -}}
+
+  location / {
+    proxy_pass http://{{.domain}};
+    {{- if (exists (printf "/etc/nginx/htpasswd/%s" .domain)) }}
+      auth_basic  "Restricted $hostname";
+      auth_basic_user_file  {{ (printf "/etc/nginx/htpasswd/%s" .domain) }};
+    {{ end -}}
+    {{- if (exists (printf "/etc/nginx/vhost.d/%s_location" .domain)) }}
+      include {{ printf "/etc/nginx/vhost.d/%s_location" .domain}};
+    {{- else if (exists "/etc/nginx/vhost.d/default_location") }}
+      include /etc/nginx/vhost.d/default_location;
+    {{- end }}
+  }
+{{- end}}
+
+{{- define "httpServer"}}
+  {{- $domain := index .domains 0}}
+  server_name {{join .domains " "}};
   listen 80;
   access_log /var/log/nginx/access.log vhost;
 
   location ^~ /.well-known/acme-challenge/ {
     proxy_pass http://acmetool;
+    break;
   }
 
-{{- if (and ($has_certs) (eq $redirect_target "https")) }}
-  return 301 https://{{$domain}}$request_uri;
-{{ else }}
-  location / {
-    proxy_pass http://{{$domain}};
-  }
-{{ end -}}
-}
+  {{ if .should_redirect }}
+    return 301 https://$hostname$request_uri;
+  {{- else }}
+    {{- template "locationBlock" (dict "domain" $domain)}}
+  {{ end -}}
+{{- end}}
 
-{{- if $has_certs }}
-server {
-  server_name {{replace $domain "," " " -1}};
+
+{{- define "httpsServer"}}
+  {{- $domain := index .domains 0}}
+  server_name {{join .domains " "}};
   listen 443 ssl http2 ;
   access_log /var/log/nginx/access.log vhost;
 
@@ -164,35 +154,78 @@ server {
   ssl_session_cache shared:SSL:50m;
   ssl_session_tickets off;
 
-  ssl_certificate /etc/nginx/certs/{{index $domains 0}}/fullchain;
-  ssl_certificate_key /etc/nginx/certs/{{index $domains 0}}/privkey;
+  ssl_certificate /etc/nginx/certs/{{ $domain }}/fullchain;
+  ssl_certificate_key /etc/nginx/certs/{{ $domain }}/privkey;
 
   {{- if (exists "/etc/nginx/certs/dhparam.pem") }}
   ssl_dhparam /etc/nginx/certs/dhparam.pem;
   {{ end -}}
 
-  {{- if (eq $redirect_target "https") }}
+  {{- if (eq .redirect_target "https") }}
   add_header Strict-Transport-Security "max-age=31536000";
   {{ end -}}
 
-  {{- if (exists (printf "/etc/nginx/vhost.d/%s" $domain)) }}
-  include {{ printf "/etc/nginx/vhost.d/%s" $domain }};
-  {{ else if (exists "/etc/nginx/vhost.d/default") }}
-  include /etc/nginx/vhost.d/default;
-  {{ end -}}
+  {{- template "locationBlock" (dict "domain" $domain)}}
+{{- end}}
 
-  location / {
-    proxy_pass http://{{$domain}};
-    {{ if (exists (printf "/etc/nginx/htpasswd/%s" $domain)) }}
-      auth_basic  "Restricted {{ $domain }}";
-      auth_basic_user_file  {{ (printf "/etc/nginx/htpasswd/%s" $domain) }};
-    {{ end -}}
-    {{- if (exists (printf "/etc/nginx/vhost.d/%s_location" $domain)) }}
-      include {{ printf "/etc/nginx/vhost.d/%s_location" $domain}};
-    {{- else if (exists "/etc/nginx/vhost.d/default_location") }}
-      include /etc/nginx/vhost.d/default_location;
-    {{ end }}
-  }
+
+## ACME CHALLENGE -------
+{{range $domain, $services := services | groupByLabel "rgon-acme" -}}
+upstream acmetool {
+  {{range $serv := $services}}{{range $cnt := .Containers -}}
+    {{range $port := $serv.Ports}}
+      server {{$cnt.Address}}:{{$port.InternalPort}};
+    {{- end}}
+  {{- end}}{{- end}}
+}
+{{end}}
+
+## HOSTS ----------------
+{{range $opt, $hosts := hosts | groupByLabel "rgon.domain" -}}
+{{- $domains := (split (replace $opt " " "" -1) ",") -}}
+{{- $domain := index $domains 0 -}}
+{{range $host := $hosts}}
+{{- $redirect_target := ($host.Labels.GetValue "rgon.redirect" "http") -}}
+{{- $has_certs := ( and (exists (printf "/etc/nginx/certs/%s/fullchain" $domain)) (exists (printf "/etc/nginx/certs/%s/privkey" $domain)) ) -}}
+{{- $should_redirect := (and (eq $redirect_target "https") ($has_certs)) -}}
+
+upstream {{$domain}}{
+  {{- template "upstreamHost" $host}}
+}
+
+server {
+  {{- template "httpServer" (dict "domains" $domains "should_redirect" $should_redirect) }}
+}
+
+{{- if $has_certs }}
+server {
+  {{- template "httpsServer" (dict "domains" $domains "redirect_target" $redirect_target) }}
+}
+{{ end }}{{/* ssl block */}}
+{{ end }}{{/* range $host */}}
+{{ end }}{{/* range $hosts */}}
+
+
+## SERVICES --------------
+{{range $opt, $services := services | groupByLabel "rgon.domain" -}}
+{{- $domains := (split (replace $opt " " "" -1) ",") -}}
+{{- $domain := index $domains 0 -}}
+{{range $serv := $services -}}
+{{- $redirect_target := ($serv.Labels.GetValue "rgon.redirect" "http") -}}
+{{- $has_certs := ( and (exists (printf "/etc/nginx/certs/%s/fullchain" $domain)) (exists (printf "/etc/nginx/certs/%s/privkey" $domain)) ) -}}
+{{- $should_redirect := (and (eq $redirect_target "https") ($has_certs)) -}}
+
+upstream {{$domain}} {
+  {{- template "upstream" $serv}}
+}
+
+server {
+  {{- template "httpServer" (dict "domains" $domains "should_redirect" $should_redirect) }}
+}
+
+{{- if $has_certs }}
+server {
+  {{- template "httpsServer" (dict "domains" $domains "redirect_target" $redirect_target) }}
 }
 {{ end }}{{/* ssl block */}}
 {{ end }}{{/* range $serv */}}
