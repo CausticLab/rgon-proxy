@@ -133,7 +133,7 @@ server {
   }
 
   {{ if .should_redirect }}
-    return 301 https://$hostname$request_uri;
+    return 301 https://$host$request_uri;
   {{- else }}
     {{- template "locationBlock" (dict "domain" $domain)}}
   {{ end -}}
