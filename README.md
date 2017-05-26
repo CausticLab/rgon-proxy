@@ -27,3 +27,8 @@ RGON-Proxy is currently in an development/alpha state cause of this it might be 
   - Update `nginx.conf`
     - Reload nginx
 1. Repeat step 2
+
+## Credits
+
+- janeczku/go-rancher-gen - service to poll rancher-metadata api
+- hlandau/acme - service to generate and reissue letsencrypt certificates
