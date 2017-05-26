@@ -30,5 +30,5 @@ RGON-Proxy is currently in an development/alpha state cause of this it might be 
 
 ## Credits
 
-- janeczku/go-rancher-gen - service to poll rancher-metadata api
-- hlandau/acme - service to generate and reissue letsencrypt certificates
+- [janeczku/go-rancher-gen](https://github.com/janeczku/go-rancher-gen) - service to poll rancher-metadata api
+- [hlandau/acme](https://github.com/hlandau/acme) - service to generate and reissue letsencrypt certificates
