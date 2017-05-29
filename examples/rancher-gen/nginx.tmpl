@@ -173,9 +173,7 @@ server {
 {{range $domain, $services := services | groupByLabel "rgon-acme" -}}
 upstream acmetool {
   {{range $serv := $services}}{{range $cnt := .Containers -}}
-    {{range $port := $serv.Ports}}
-      server {{$cnt.Address}}:{{$port.InternalPort}};
-    {{- end}}
+      server {{$cnt.Address}}:402;
   {{- end}}{{- end}}
 }
 {{end}}
