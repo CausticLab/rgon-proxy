@@ -16,21 +16,21 @@ RGON-Proxy is currently in an development/alpha state cause of this it might be 
 ## Features
 
 ### Let’s Encrypt support
-Let’s Encrypt support powered by [hlandau/acme](https://github.com/hlandau/acme)
+Let’s Encrypt support powered by [hlandau/acme](https://github.com/hlandau/acme).
 
 ### Automatic https redirect
-If the `rgon.redirect` label is defined with `https` rgon automatically redirects the specified domains to https
+If the `rgon.redirect` label is defined with `https` rgon automatically redirects the specified domains to https.
 
 ### Diffie-Hellman Key generation
 On each start we check if there is allready an key present and if not we generate one.
 
 ### Multiple Domain support
 It is possible to define multiple domains in the `rgon.domain` label seperated by an `,`. 
-If the `rgon.ssl` label is also present we generate an SNI Certificate for all this domains
+If the `rgon.ssl` label is also present we generate an SNI Certificate for all this domains.
 
 ### Custom/Default nginx vhost & location config
-You can specify an default vhost or default location config file under %YourPath%/vhost.d/default[_location].
-Or define an configuration for each domain with %domain%[_location]. Please notice that if you use multiple domains the first one is the identifier.
+You can specify an default vhost or default location config file under `%YourPath%/vhost.d/default[_location]`.
+Or define an configuration for each domain with `%domain%[_location]`. Please notice that if you use multiple domains the first one is the identifier.
 
 ### HTTP Basic Auth
 Add an file with the domain name of the `rgon.domain` label under %YourPath%/htpasswd and your site is protected with an Basic Auth dialog.
