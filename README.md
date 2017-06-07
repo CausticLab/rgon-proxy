@@ -83,6 +83,8 @@ rgon.stats=1.1.1.1
 rgon.stats=1.1.1.1,2.2.2.2
 rgon.stats=all
 ```
+Use `http://server-ip/nginx_status` to access these stats - note it only work with the ip-address were the nginx is running on
+
 
 ## Upcoming Features
 
