@@ -1,4 +1,4 @@
-FROM alpine:3.5
+FROM alpine:3.6
 
 RUN apk add --no-cache ca-certificates openssl
 
@@ -29,6 +29,7 @@ RUN chmod +x /usr/local/bin/rancher-gen \
     && chmod +x /app/* \
     && chown root:root /usr/lib/acme/hooks/* \
     && chmod +x /usr/lib/acme/hooks/* \
+    && chmod +x /etc/periodic/daily/* \
     && rm /tmp/*.tar.gz
 
 ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh" ]

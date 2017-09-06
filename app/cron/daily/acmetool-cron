@@ -1,2 +1,3 @@
 #!/bin/sh
-/usr/local/bin/acmetool --batch
+echo "running acmetool renewal"
+/usr/local/bin/acmetool --batch reconcile
