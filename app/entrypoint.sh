@@ -36,6 +36,14 @@ function copy_config_files {
         mkdir -p /etc/rancher-gen/default
         cp /app/rancher-gen/default/* /etc/rancher-gen/default/
     fi
+
+    if [[ ! -f /var/lib/acme/conf/responses ]]; then
+        cp /app/acme/conf/responses /var/lib/acme/conf/
+    fi
+
+    if [[ ! -f /var/lib/acme/conf/target ]]; then
+        cp /app/acme/conf/target /var/lib/acme/conf/
+    fi
 }
 
 function check_writable_directory {
