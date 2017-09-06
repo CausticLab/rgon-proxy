@@ -6,6 +6,8 @@ ENV RANCHER_GEN_RELEASE=v0.6.0 \
     RGON_EXEC_RELEASE=v1.1.1 \
     ACMETOOL_RELEASE=v0.0.59
 
+VOLUME ["/var/lib/acme"]
+
 # Consider revising: https://www.ctl.io/developers/blog/post/dockerfile-add-vs-copy/#which-to-use
 ADD https://github.com/causticlab/go-rancher-gen/releases/download/${RANCHER_GEN_RELEASE}/rancher-gen-linux-amd64.tar.gz /tmp/rancher-gen.tar.gz
 ADD https://github.com/causticlab/rgon-exec/releases/download/${RGON_EXEC_RELEASE}/rgon-exec-linux-amd64.tar.gz /tmp/rgon-exec.tar.gz
