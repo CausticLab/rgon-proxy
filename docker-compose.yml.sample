@@ -34,6 +34,7 @@ services:
       - 402:402/tcp
     volumes:
       - ${DIR}/rancher-gen:/etc/rancher-gen
+      - ${DIR}/acmetool:/var/lib/acme
     links:
       - nginx
     labels:
