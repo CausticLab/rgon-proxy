@@ -38,6 +38,7 @@ function copy_config_files {
     fi
 
     if [[ ! -f /var/lib/acme/conf/responses ]]; then
+        mkdir -p /var/lib/acme/conf
         cp /app/acme/conf/responses /var/lib/acme/conf/
     fi
 
