@@ -148,7 +148,9 @@ server {
   }
 
   {{ if .should_redirect }}
+  location / {
     return 301 https://$host$request_uri;
+  }
   {{- else }}
     {{- template "locationBlock" (dict "domain" $domain)}}
   {{ end -}}
