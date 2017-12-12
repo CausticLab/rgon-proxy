@@ -10,6 +10,8 @@ Add labels to containers to indicate domain name and port (if non-80):
 - `rgon.ssl='true'`
 - `rgon.redirect=https`
 - `rgon.stats=1.1.1.1`
+- `rgon.weight=1`
+- `rgon.backup=backup`
 
 ## Update Notice
 RGON-Proxy is currently in an development/alpha state cause of this it might be possible that default config files will change rapidly - To provide always an latest use of those config files please rename the config folder on your server before the update an merge changes by hand. We are currently on an discussion how to solve this problem in the future
@@ -85,6 +87,32 @@ rgon.stats=all
 ```
 Use `http://server-ip/nginx_status` to access these stats - note it only work with the ip-address were the nginx is running on
 
+
+### Label: `rgon.weight`
+
+Optional [Nginx weight parameter](http://nginx.org/en/docs/http/ngx_http_upstream_module.html#weight) determines the order of load balancing. Defaults to `1` and can be overridden with this label.
+
+**Weight Label Examples:**
+
+```
+rgon.weight=
+rgon.weight=0
+rgon.weight=2
+```
+
+### Label: `rgon.backup`
+
+Optional [Nginx backup parameter](http://nginx.org/en/docs/http/ngx_http_upstream_module.html#backup) specifies servers to use only in the case that the main upstream servers are down. Defaults to `""` and can be overridden with this label.
+
+**Weight Label Examples:**
+
+```go
+# Empty string, normal operation
+rgon.backup=
+
+# Specifies backup
+rgon.backup=backup
+```
 
 ## Upcoming Features
 

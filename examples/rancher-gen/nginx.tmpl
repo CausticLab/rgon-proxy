@@ -112,7 +112,11 @@ server {
 {{- end}}
 
 {{- define "upstreamHost"}}
-  server {{.Address}}:{{.Labels.GetValue "rgon.port" "8080"}};
+  {{ $port := .Labels.GetValue "rgon.port" "8080" -}}
+  {{ $weight := .Labels.GetValue "rgon.weight" "1" -}}
+  {{ $backup := .Labels.GetValue "rgon.backup" "" -}}
+
+  {{ printf "server %s:%s weight=%s %s;" .Address $port $weight $backup }}
 {{- end}}
 
 {{- define "locationBlock"}}
@@ -204,13 +208,16 @@ upstream acmetool {
 {{range $opt, $hosts := hosts | groupByLabel "rgon.domain" -}}
 {{- $domains := (split (replace $opt " " "" -1) ",") -}}
 {{- $domain := index $domains 0 -}}
-{{range $host := $hosts}}
+{{ $host := index $hosts 0 }}
+
 {{- $redirect_target := ($host.Labels.GetValue "rgon.redirect" "http") -}}
 {{- $has_certs := ( and (exists (printf "/etc/nginx/certs/%s/fullchain" $domain)) (exists (printf "/etc/nginx/certs/%s/privkey" $domain)) ) -}}
 {{- $should_redirect := (and (eq $redirect_target "https") ($has_certs)) -}}
 
 upstream {{$domain}}{
-  {{- template "upstreamHost" $host}}
+{{range $host := $hosts}}
+  {{- template "upstreamHost" $host -}}
+{{ end }}
 }
 
 server {
@@ -222,7 +229,6 @@ server {
   {{- template "httpsServer" (dict "domains" $domains "redirect_target" $redirect_target) }}
 }
 {{ end }}{{/* ssl block */}}
-{{ end }}{{/* range $host */}}
 {{ end }}{{/* range $hosts */}}
 
 
