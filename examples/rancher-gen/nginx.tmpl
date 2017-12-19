@@ -52,7 +52,7 @@ server {
   listen 80;
   access_log /var/log/nginx/access.log vhost;
 
-  {{ if service.Labels.Exists "rgon.stats" }}
+  {{- if service.Labels.Exists "rgon.stats" }}
   location /nginx_status {
     stub_status on;
     {{- $statips := (split (replace (service.Labels.GetValue "rgon.stats") " " "" -1) ",") -}}
@@ -61,12 +61,11 @@ server {
     {{- end }}
     deny all;
   }
-  {{end}}
+  {{ end }}
 
-      
   location / {
     return 503;
-  }   
+  }
 }
 
 {{ if (and (exists "/etc/nginx/certs/default.crt") (exists "/etc/nginx/certs/default.key")) }}
@@ -89,27 +88,25 @@ server {
 ## TEMPLATES -------
 {{- define "upstream"}}
   {{- $serv := .}}
-  {{range $cnt := .Containers -}}
-    {{- $defaultPort := "80"}}
-    {{- $port := where $serv.Ports "InternalPort" $defaultPort }}
-    {{- if .Labels.Exists "rgon.port" }}
-      # Has rgon.port label
-      server {{$cnt.Address}}:{{$cnt.Labels.GetValue "rgon.port"}};
-    {{- else }}
-      # No rgon.port label
-      {{- $portLen := len $serv.Ports -}}
-      {{- if eq $portLen 0 }}
-      # No ports available
-      server {{$cnt.Address}} down;
-      {{- else }}
-      # Ports available
-        {{- range $p := $serv.Ports }}
-        server {{$cnt.Address}}:{{ $p.InternalPort }};
-        {{ end -}}
-      {{ end -}}
-    {{ end -}}
-  {{- end}}
-{{- end}}
+  {{- range $cnt := .Containers -}}
+    {{- $weight := $cnt.Labels.GetValue "rgon.weight" "1" }}
+    {{- $backup := $cnt.Labels.GetValue "rgon.backup" "" }}
+    {{- $portLen := len $serv.Ports }}
+    {{- $portInt := where $serv.Ports "InternalPort" "80" }}
+    {{- $portLabel := $cnt.Labels.GetValue "rgon.port" "" -}}
+
+    {{- if eq $cnt.State "stopped" }}{{ printf "\n  server %s down; # Container stopped" $cnt.Address }}
+    {{- else if (and (eq $portLen 0) (eq (len $portInt) 0 )) }}{{- printf "\n  server %s down; # No ports available" $cnt.Address -}}{{ end -}}
+
+    {{- if (and (gt $portLen 0) (ne $portLabel "") (ne $cnt.State "stopped") ) }}
+    {{- printf "\n  server %s:%s weight=%s %s; # Has rgon.port label" $cnt.Address $portLabel $weight $backup }}
+    {{- end -}}
+
+    {{- if (and (or (gt $portLen 0) (gt (len $portInt) 0) ) (ne $cnt.State "stopped") (eq $portLabel "")  ) }}{{ range $p := $serv.Ports }}
+    {{- printf "\n  server %s:%s weight=%s %s; # No rgon.port label, ports available" $cnt.Address $p.InternalPort $weight $backup }}
+    {{- end }}{{ end -}}
+  {{- end -}}
+{{- end }}
 
 {{- define "upstreamHost"}}
   {{ $port := .Labels.GetValue "rgon.port" "8080" -}}
@@ -191,7 +188,7 @@ server {
     break;
   }
 
-  {{- template "locationBlock" (dict "domain" $domain)}}
+  {{ template "locationBlock" (dict "domain" $domain)}}
 {{- end}}
 
 
@@ -236,13 +233,20 @@ server {
 {{range $opt, $services := services | groupByLabel "rgon.domain" -}}
 {{- $domains := (split (replace $opt " " "" -1) ",") -}}
 {{- $domain := index $domains 0 -}}
-{{range $serv := $services -}}
+{{- $serv := index $services 0 }}
+
 {{- $redirect_target := ($serv.Labels.GetValue "rgon.redirect" "http") -}}
 {{- $has_certs := ( and (exists (printf "/etc/nginx/certs/%s/fullchain" $domain)) (exists (printf "/etc/nginx/certs/%s/privkey" $domain)) ) -}}
 {{- $should_redirect := (and (eq $redirect_target "https") ($has_certs)) -}}
 
+{{- if (exists (printf "/etc/nginx/vhost.d/%s_upstream" $domain)) }}
+  include {{ printf "/etc/nginx/vhost.d/%s_upstream" $domain}};
+{{- end }}
+
 upstream {{$domain}} {
+{{ range $serv := $services }}
   {{- template "upstream" $serv}}
+{{ end }}
 }
 
 server {
@@ -254,5 +258,4 @@ server {
   {{- template "httpsServer" (dict "domains" $domains "redirect_target" $redirect_target) }}
 }
 {{ end }}{{/* ssl block */}}
-{{ end }}{{/* range $serv */}}
 {{ end }}{{/* range $services */}}
