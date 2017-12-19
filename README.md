@@ -104,7 +104,7 @@ rgon.weight=2
 
 Optional [Nginx backup parameter](http://nginx.org/en/docs/http/ngx_http_upstream_module.html#backup) specifies servers to use only in the case that the main upstream servers are down. Defaults to `""` and can be overridden with this label.
 
-**Weight Label Examples:**
+**Backup Label Examples:**
 
 ```go
 # Empty string, normal operation
